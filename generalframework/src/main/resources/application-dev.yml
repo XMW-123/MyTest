@@ -1,0 +1,21 @@
+#英文字符集时开启
+#spring.datasource.druid.connection-properties=clientEncoding=GBK;serverEncoding=ISO-8859-1;
+#数据源配置 mysql
+spring.datasource.druid.validation-query: SELECT 1
+spring.datasource.druid.filter.stat.db-type: mysql
+spring.datasource.druid.driver-class-name: com.mysql.cj.jdbc.Driver
+spring.datasource.druid.url: jdbc:mysql://47.106.121.3:3306/test?useUnicode=true&characterEncoding=utf8&useSSL=false
+spring.datasource.druid.username: mysql
+spring.datasource.druid.password: mysql
+#数据源配置
+#spring.datasource.druid.driver-class-name: oracle.jdbc.OracleDriver
+#spring.datasource.druid.url: jdbc:oracle:thin:@192.168.0.118:1521/spacs
+#spring.datasource.druid.username: RTCODER@63OSeGsi7ScESkzOcTIPZh3dCr1eYGnE
+#spring.datasource.druid.password: RTCODER@63OSeGsi7ScESkzOcTIPZh3dCr1eYGnE
+#设置项目名和端口如：http://192.168.0.118:port/context-path
+server.servlet.context-path: /general
+server.port: 8080
+#liquibase相关配置
+spring.liquibase.enabled: true
+spring.liquibase.change-log: classpath:/db/mysql_master.xml
+spring.liquibase.rollback-file: /logs/db_${spring.application.name}.txt

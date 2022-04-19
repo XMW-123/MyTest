@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rt.generalframework.mapper.TestMapper">
+
+    <resultMap id="StudentMap" type="Student">
+        <id column="sid" property="sid"/>
+        <result column="sname" property="sname"/>
+        <result column="sage" property="sage"/>
+        <result column="ssex" property="ssex"/>
+        <association property="scUtils" javaType="com.rt.generalframework.dto.ScUtils">
+            <result column="class1" property="score01"/>
+            <result column="class2" property="score02"/>
+            <result column="courseTotal" property="courseTotal"/>
+            <result column="scoreTotal" property="scoreTotal"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="ScMap" type="Sc">
+        <result column="sid" property="sid"/>
+        <result column="cid" property="cid"/>
+        <result column="score" property="score"/>
+        <association property="scUtils" javaType="com.rt.generalframework.dto.ScUtils">
+            <result column="sid02" property="sid02"/>
+            <result column="cid02" property="cid02"/>
+            <result column="score02" property="score02"/>
+        </association>
+    </resultMap>
+
+    <select id="findScore" resultMap="StudentMap">
+        SELECT
+            *
+        FROM
+            student stu
+        RIGHT JOIN (
+            SELECT
+                t1.sid,
+                t1.class1,
+                t2.class2
+            FROM
+                (
+                    SELECT
+                        sid,
+                        score AS class1
+                    FROM
+                        sc
+                    WHERE
+                        cid = '01'
+                ) AS t1,
+                (
+                    SELECT
+                        sid,
+                        score AS class2
+                    FROM
+                        sc
+                    WHERE
+                        cid = '02'
+                ) AS t2
+            WHERE
+                t1.sid = t2.sid
+            AND t1.class1 > t2.class2
+        ) AS r ON stu.sid = r.sid
+    </select>
+
+    <select id="findCid" resultMap="ScMap">
+        SELECT
+            *
+        FROM
+            (
+                SELECT
+                    *
+                FROM
+                    sc
+                WHERE
+                    sc.cid = '01'
+            ) t1
+        LEFT JOIN (
+            SELECT
+                sid as sid02,
+                cid as cid02,
+                score as score02
+            FROM
+                sc
+            WHERE
+                sc.cid = '02'
+        ) t2
+        ON t1.sid = t2.sid02
+      /*  WHERE
+            t2.cid IS NULL;*/
+    </select>
+
+
+    <select id="findCid02" resultMap="ScMap">
+        SELECT
+            *
+        FROM
+            (
+                SELECT
+                    *
+                FROM
+                    sc
+                WHERE
+                    sc.cid = '01'
+            ) t1,
+             (
+            SELECT
+                sid as sid02,
+                cid as cid02,
+                score as score02
+            FROM
+                sc
+            WHERE
+                sc.cid = '02'
+        ) t2
+        WHERE t1.sid = t2.sid02
+    </select>
+
+    <select id="findCid03" resultType="SC">
+        SELECT
+            *
+        FROM
+            sc
+        WHERE
+            sc.sid NOT IN (
+                SELECT
+                    sid
+                FROM
+                    sc
+                WHERE
+                    sc.cid = '01'
+            )
+        AND sc.cid = '02';
+    </select>
+
+    <select id="findStudentAvg" resultMap="StudentMap">
+        SELECT
+            stu.sid,
+            stu.sname,
+            AVG(sc.score) as avgs
+        FROM
+            student stu,
+            sc
+        WHERE
+            stu.sid = sc.sid
+        GROUP BY
+            sc.sid
+        HAVING
+            AVG(sc.score) >= 60
+    </select>
+
+    <select id="findStudent" resultType="Student">
+        SELECT DISTINCT student.*
+        FROM sc,student
+        WHERE student.sid = sc.sid;
+    </select>
+    
+    <select id="findCourseAndScoreTotal" resultMap="StudentMap">
+        SELECT
+            stu.sid,
+            stu.sname,
+            COUNT(sc.cid) as courseTotal,
+            SUM(sc.score) as scoreTotal
+        FROM
+            student stu,
+            sc
+        WHERE
+            stu.sid = sc.sid
+        GROUP BY
+            stu.sid
+    </select>
+
+    <select id="findTeacherLi" resultType="int">
+        SELECT COUNT(*)
+        FROM teacher
+        WHERE tname LIKE ('李%');
+    </select>
+
+    <select id="findStudentByTeacher" resultType="Student">
+        SELECT
+            student.*
+        FROM
+            student,
+            sc,
+            teacher,
+            course
+        WHERE
+            student.sid = sc.sid
+        AND sc.cid = course.cid
+        AND teacher.tid = course.tid
+        AND tname = '张三'
+    </select>
+    
+    <select id="findStudentNoLearnAll" resultType="Student">
+        SELECT
+            stu.*
+        FROM
+            student stu
+        WHERE
+            sid NOT IN (
+                SELECT
+                    sid
+                FROM
+                    sc
+                GROUP BY
+                    sid
+                HAVING
+                    COUNT(cid) >= (
+                        SELECT
+                            COUNT(DISTINCT cid)
+                        FROM
+                            course
+                    )
+            )
+    </select>
+</mapper>

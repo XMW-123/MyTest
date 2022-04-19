@@ -1,0 +1,64 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd">
+    <changeSet author="zzm" id="20200619_1">
+        <!--新增机构表-->
+        <sql>
+            CREATE TABLE DICT_ORG
+            (
+            ORG_ID VARCHAR(32) NOT NULL,
+            ORG_CODE VARCHAR(32),
+            ORG_NAME VARCHAR(64),
+            ORG_ALIAS VARCHAR(32),
+            INPUT_CODE VARCHAR(64),
+            ADDRESS VARCHAR(256),
+            PHONE_NUMERIC VARCHAR(32),
+            ORG_TYPE VARCHAR(2),
+            HOSPITAL_TYPE VARCHAR(32),
+            HOSPITAL_LEVEL VARCHAR(2),
+            LOCAL_FLAG CHAR(1),
+            AREA_CODE VARCHAR(6),
+            MEMO VARCHAR(4000),
+            SORT_NO NUMERIC(4,0) DEFAULT 0,
+            IC_CAB_CODE VARCHAR(20),
+            IC_CAB_PORT VARCHAR(20),
+            ID_CAB_CODE VARCHAR(20),
+            ID_CAB_PORT VARCHAR(20),
+            ORG_ICON BLOB,
+            WEB_SITE VARCHAR(128),
+            TRAFFIC_GUIDE VARCHAR(512),
+            LONGITUDE NUMERIC(20,16),
+            LATITUDE NUMERIC(20,16),
+            USE_FLAG CHAR(1),
+            CONSTRAINT PK_ORG PRIMARY KEY (ORG_ID)
+            )
+        </sql>
+        <rollback></rollback>
+    </changeSet>
+    <changeSet author="zzm" id="20200619_2">
+        <!--新增部门表-->
+        <sql>
+            CREATE TABLE DICT_DEPT
+            (
+            DEPT_ID VARCHAR(32) NOT NULL,
+            DEPT_CODE VARCHAR(32),
+            DEPT_NAME VARCHAR(48),
+            DEPT_ALIAS VARCHAR(24),
+            CLINIC_ATTR CHAR(1),
+            OUTP_OR_INP CHAR(1),
+            INTE_OR_SERG CHAR(1),
+            INPUT_CODE VARCHAR(32),
+            OUTER_CODE VARCHAR(16),
+            SHARE_GROUP VARCHAR(4),
+            ORG_ID VARCHAR(32),
+            SECTION_ID VARCHAR(32),
+            UPPER_ID VARCHAR(32),
+            SORT_NO NUMERIC(8,0),
+            LOCATION VARCHAR(64),
+            INTRODUCE VARCHAR(1000),
+            USE_FLAG CHAR(1),
+            CONSTRAINT PK_DEPT PRIMARY KEY (DEPT_ID)
+            )
+        </sql>
+        <rollback></rollback>
+    </changeSet>
+</databaseChangeLog>
