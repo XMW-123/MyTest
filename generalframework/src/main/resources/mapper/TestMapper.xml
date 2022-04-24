@@ -12,8 +12,14 @@
         <association property="scUtils" javaType="com.rt.generalframework.dto.ScUtils">
             <result column="class1" property="score01"/>
             <result column="class2" property="score02"/>
+            <result column="avgs" property="avg"/>
+            <result column="mins" property="min"/>
+            <result column="maxs" property="max"/>
+            <result column="cid" property="cid02"/>
             <result column="courseTotal" property="courseTotal"/>
             <result column="scoreTotal" property="scoreTotal"/>
+            <result column="score" property="score01"/>
+            <result column="nums" property="num"/>
         </association>
     </resultMap>
 
@@ -25,6 +31,26 @@
             <result column="sid02" property="sid02"/>
             <result column="cid02" property="cid02"/>
             <result column="score02" property="score02"/>
+            <result column="cname" property="cname"/>
+            <result column="courseTotal" property="courseTotal"/>
+            <result column="scoreTotal" property="scoreTotal"/>
+            <result column="nums" property="num"/>
+            <result column="rank" property="rank"/>
+            <result column="mins" property="min"/>
+            <result column="maxs" property="max"/>
+            <result column="avgs" property="avg"/>
+            <result column="passrate" property="passrate"/>
+            <result column="mediumsrate" property="mediumsrate"/>
+            <result column="excellentrate" property="excellentrate"/>
+            <result column="finerate" property="finerate"/>
+            <result column="sNumber1" property="sNumber1"/>
+            <result column="sPercentage1" property="sPercentage1"/>
+            <result column="sNumber2" property="sNumber2"/>
+            <result column="sPercentage2" property="sPercentage2"/>
+            <result column="sNumber3" property="sNumber3"/>
+            <result column="sPercentage3" property="sPercentage3"/>
+            <result column="sNumber4" property="sNumber4"/>
+            <result column="sPercentage4" property="sPercentage4"/>
         </association>
     </resultMap>
 
@@ -46,7 +72,7 @@
                     FROM
                         sc
                     WHERE
-                        cid = '01'
+                        cid = #{cid1}
                 ) AS t1,
                 (
                     SELECT
@@ -55,7 +81,7 @@
                     FROM
                         sc
                     WHERE
-                        cid = '02'
+                        cid = #{cid2}
                 ) AS t2
             WHERE
                 t1.sid = t2.sid
@@ -73,7 +99,7 @@
                 FROM
                     sc
                 WHERE
-                    sc.cid = '01'
+                    sc.cid = #{cid1}
             ) t1
         LEFT JOIN (
             SELECT
@@ -83,13 +109,12 @@
             FROM
                 sc
             WHERE
-                sc.cid = '02'
+                sc.cid = #{cid2}
         ) t2
         ON t1.sid = t2.sid02
       /*  WHERE
             t2.cid IS NULL;*/
     </select>
-
 
     <select id="findCid02" resultMap="ScMap">
         SELECT
@@ -101,7 +126,7 @@
                 FROM
                     sc
                 WHERE
-                    sc.cid = '01'
+                    sc.cid = #{cid1}
             ) t1,
              (
             SELECT
@@ -111,7 +136,7 @@
             FROM
                 sc
             WHERE
-                sc.cid = '02'
+                sc.cid = #{cid2}
         ) t2
         WHERE t1.sid = t2.sid02
     </select>
@@ -128,9 +153,9 @@
                 FROM
                     sc
                 WHERE
-                    sc.cid = '01'
+                    sc.cid = #{cid1}
             )
-        AND sc.cid = '02';
+        AND sc.cid = #{cid2};
     </select>
 
     <select id="findStudentAvg" resultMap="StudentMap">
@@ -146,7 +171,7 @@
         GROUP BY
             sc.sid
         HAVING
-            AVG(sc.score) >= 60
+            AVG(sc.score) >= #{score}
     </select>
 
     <select id="findStudent" resultType="Student">
@@ -170,10 +195,10 @@
             stu.sid
     </select>
 
-    <select id="findTeacherLi" resultType="int">
+    <select id="findTeacherByName" resultType="int">
         SELECT COUNT(*)
         FROM teacher
-        WHERE tname LIKE ('李%');
+        WHERE tname LIKE concat(#{name},'%');
     </select>
 
     <select id="findStudentByTeacher" resultType="Student">
@@ -188,7 +213,7 @@
             student.sid = sc.sid
         AND sc.cid = course.cid
         AND teacher.tid = course.tid
-        AND tname = '张三'
+        AND tname = #{name}
     </select>
     
     <select id="findStudentNoLearnAll" resultType="Student">
@@ -212,5 +237,709 @@
                             course
                     )
             )
+    </select>
+    
+    <select id="findStudentBySid" parameterType="String" resultType="Student">
+        SELECT DISTINCT
+            std.*
+        FROM
+            student std,
+            sc
+        WHERE
+            std.sid = sc.sid
+        AND sc.cid IN (
+            SELECT
+                cid
+            FROM
+                sc
+            WHERE
+                sid = #{sid}
+        )
+        AND sc.sid != #{sid}
+    </select>
+    
+    <select id="findStudentBySid02" resultType="Student">
+        SELECT
+            s.*
+        FROM
+            student s,
+            (
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            sid,
+                            GROUP_CONCAT(cid) cid1
+                        FROM
+                            sc
+                        GROUP BY
+                            sc.sid
+                    ) s1,
+                    (
+                        SELECT
+                            GROUP_CONCAT(cid) cid2
+                        FROM
+                            sc
+                        WHERE
+                            sid = #{sid}
+                    ) s2
+                WHERE
+                    s1.cid1 = s2.cid2
+            ) sc1
+        WHERE
+            s.sid = sc1.sid
+        AND s.sid != #{sid};
+    </select>
+    
+    <select id="findStudentByTeacher02" resultType="Student">
+        SELECT
+            sname
+        FROM
+            student s
+        WHERE
+            sid NOT IN (
+                SELECT
+                    sid
+                FROM
+                    sc,
+                    course c,
+                    teacher t
+                WHERE
+                    t.tid = c.tid
+                AND sc.cid = c.cid
+                AND s.sid = sc.sid
+                AND tname = #{name}
+            )
+    </select>
+    
+    <select id="findStudentByScore" resultMap="StudentMap">
+        SELECT
+            sc1.sid,
+            Student.sname,
+            sc2.avgs
+        FROM
+            (
+                SELECT
+                    sid
+                FROM
+                    sc
+                WHERE
+                    score &lt; #{score}
+                GROUP BY
+                    sid
+                HAVING
+                    COUNT(*) >= #{number}
+            ) sc1,
+            (
+                SELECT
+                    sid,
+                    AVG(score) avgs
+                FROM
+                    sc
+                GROUP BY
+                    sid
+            ) sc2,
+            Student
+        WHERE
+            sc2.sid = Student.sid
+        AND sc1.sid = sc2.sid;
+    </select>
+
+    <select id="findStudentByCidAndScore" resultType="Student">
+        SELECT
+            s.*
+        FROM
+            student s,
+            sc
+        WHERE
+            s.sid = sc.sid
+        AND sc.cid = #{cid}
+        AND score &lt; #{score}
+        ORDER BY
+            score DESC
+    </select>
+
+    <select id="findStudentOrderByAvg" resultMap="ScMap">
+        SELECT
+            sc.*, avgs
+        FROM
+            sc,
+            (
+                SELECT
+                    sid,
+                    AVG(score) avgs
+                FROM
+                    sc
+                GROUP BY
+                    sid
+            ) a
+        WHERE
+            sc.sid = a.sid
+        ORDER BY
+            avgs DESC
+    </select>
+
+    <select id="findCoures" resultMap="ScMap">
+        SELECT
+            sc1.cid,
+            c.cname,
+            MAX(score) maxs,
+            MIN(score) mins,
+            AVG(score) avgs,
+            SUM(pass) / count(sid) passrate,
+            SUM(mediums) / count(sid) mediumsrate,
+            SUM(excellent) / count(sid) excellentrate,
+            SUM(fine) / count(sid) finerate
+        FROM
+            course c,
+            (
+                SELECT
+                    *, CASE
+                WHEN score >= 60 THEN
+                    1
+                ELSE
+                    0
+                END AS pass,
+                CASE
+            WHEN score > 70
+            AND score &lt; 80 THEN
+                1
+            ELSE
+                0
+            END AS mediums,
+            CASE
+        WHEN score >= 80
+        AND score &lt; 90 THEN
+            1
+        ELSE
+            0
+        END AS excellent,
+         CASE
+        WHEN score >= 90 THEN
+            1
+        ELSE
+            0
+        END AS fine
+        FROM
+            sc
+            ) AS sc1
+        WHERE
+            sc1.cid = c.cid
+        GROUP BY
+            cid
+    </select>
+    
+    <select id="findScoreOrderByCid" resultMap="ScMap">
+        SELECT
+          a.*,
+          COUNT(a.score) AS rank
+        FROM
+          sc AS a
+          LEFT JOIN sc AS b
+            ON a.cid = b.cid
+            AND a.score &lt; b.score
+        GROUP BY a.cid,
+          a.sid
+        ORDER BY a.cid,
+            rank;
+    </select>
+
+    <select id="findScoreOrderByCid02" resultMap="ScMap">
+        SELECT
+          a.*,
+          COUNT(b.score)+1 AS rank
+        FROM
+          sc AS a
+          LEFT JOIN sc AS b
+            ON a.cid = b.cid
+            AND a.score &lt; b.score
+        GROUP BY a.cid,
+          a.sid
+        ORDER BY a.cid,
+          rank ;
+    </select>
+
+    <select id="findScoreOrderByCid03" resultMap="ScMap">
+        SELECT
+            s1.*,@rank := @rank + 1 AS rank
+        FROM
+            (
+                SELECT
+                    sid,
+                    SUM(score) score1
+                FROM
+                    sc
+                GROUP BY
+                    sid
+                ORDER BY
+                    score1 DESC
+            ) s1,
+            (SELECT @rank := 0) s2
+    </select>
+    
+    <select id="findScore02" resultMap="ScMap">
+        SELECT
+          sc.cid,
+          cname,
+          SUM(
+            CASE
+              WHEN score >= 0
+              AND score &lt;= 60
+              THEN 1
+              ELSE 0
+            END
+          ) AS sNumber1,
+          SUM(
+            CASE
+              WHEN score >= 0
+              AND score &lt;= 60
+              THEN 1
+              ELSE 0
+            END
+          ) / COUNT(sid) AS sPercentage1,
+          SUM(
+            CASE
+              WHEN score >= 60
+              AND score &lt;= 70
+              THEN 1
+              ELSE 0
+            END
+          ) AS sNumber2,
+          SUM(
+            CASE
+              WHEN score >= 60
+              AND score &lt;= 70
+              THEN 1
+              ELSE 0
+            END
+          ) / COUNT(sid) AS sPercentage2,
+          SUM(
+            CASE
+              WHEN score >= 70
+              AND score &lt;= 85
+              THEN 1
+              ELSE 0
+            END
+          ) AS sNumber3,
+          SUM(
+            CASE
+              WHEN score >= 70
+              AND score &lt;= 85
+              THEN 1
+              ELSE 0
+            END
+          ) / COUNT(sid) AS sPercentage3,
+          SUM(
+            CASE
+              WHEN score >= 85
+              AND score &lt;= 100
+              THEN 1
+              ELSE 0
+            END
+          ) AS sNumber4,
+          SUM(
+            CASE
+              WHEN score >= 85
+              AND score &lt;= 100
+              THEN 1
+              ELSE 0
+            END
+          ) / COUNT(sid) AS sPercentage4
+        FROM
+          sc
+          JOIN course
+            ON sc.cid = course.cid
+        GROUP BY sc.cid,
+          cname ;
+    </select>
+
+    <select id="findScore03" resultMap="ScMap">
+        SELECT
+            a.*, COUNT(b.score) + 1 AS rank
+        FROM
+            SC AS a
+        LEFT JOIN SC AS b ON a.cid = b.cid
+        AND a.score &lt; b.score
+        GROUP BY
+            a.cid,
+            a.sid
+        HAVING
+            rank &lt;= #{number}
+        ORDER BY
+            a.cid,
+            rank;
+    </select>
+
+    <select id="findCourseTotal" resultMap="ScMap">
+        SELECT cid,COUNT(sid) AS nums
+        FROM  sc
+        GROUP BY cid;
+    </select>
+
+    <select id="findStudentByCourseTotal" resultType="Student">
+        SELECT
+            sc.sid,
+            sname
+        FROM
+            sc,
+            student
+        WHERE
+            sc.sid = student.sid
+        GROUP BY
+            sc.sid
+        HAVING
+            COUNT(sc.cid) = #{number};
+    </select>
+
+    <select id="findNumBySsex" resultMap="StudentMap">
+       SELECT
+            ssex,
+            COUNT(ssex) AS nums
+        FROM
+            student
+        GROUP BY
+            ssex;
+    </select>
+
+    <select id="findStudentBySname" resultType="Student">
+        SELECT
+            *
+        FROM
+            student
+        WHERE
+            sname LIKE concat('%',#{name},'%');
+    </select>
+    
+    <select id="findStudentBySnameAndSsex" resultMap="StudentMap">
+        SELECT
+            sname,
+            nums
+        FROM
+            (
+                SELECT
+                    sname,
+                    COUNT(sname) nums,
+                    count(ssex) sex
+                FROM
+                    student
+                GROUP BY
+                    sname,
+                    ssex
+            ) s
+        WHERE
+            nums > 1
+        AND sex > 1;
+    </select>
+
+    <select id="findStudentBySage" resultType="Student">
+        SELECT
+            *
+        FROM
+            student
+        WHERE
+            sage LIKE concat(#{age},'%')
+    </select>
+
+
+    <select id="findScOrderByAvgAndCid" resultMap="ScMap">
+        SELECT
+            cid,
+            AVG(score) avgs
+        FROM
+            sc
+        GROUP BY
+            cid
+        ORDER BY
+            avgs DESC,
+            cid;
+    </select>
+
+    <select id="findStudentByScore02" resultMap="StudentMap">
+        SELECT
+            s.sid,
+            s.sname,
+            AVG(score) avgs
+        FROM
+            student s,
+            sc
+        WHERE
+            s.sid = sc.sid
+        GROUP BY
+            sid
+        HAVING
+            avgs >= #{score}
+    </select>
+
+    <select id="findStudentByCnameAndScore" resultMap="StudentMap">
+        SELECT
+            sname,
+            score
+        FROM
+            course c,
+            sc,
+            student s
+        WHERE
+            sc.sid = s.sid
+        AND c.cid = sc.cid
+        AND c.cname = #{name}
+        AND sc.score &lt; #{score}
+    </select>
+
+    <select id="findStudentAndScore" resultMap="StudentMap">
+        SELECT
+            sname,
+            sc.cid,
+            score
+        FROM
+            student AS s
+        LEFT JOIN sc ON sc.sid = s.sid
+        ORDER BY
+            sname DESC,
+            cid;
+    </select>
+
+    <select id="findStudentByScore03" resultMap="StudentMap">
+        SELECT
+            sname,
+            sc.cid,
+            score
+        FROM
+            sc,
+            student AS s
+        WHERE
+            sc.sid = s.sid
+        AND score > #{score}
+    </select>
+
+    <select id="findScoreOrderByCid04" resultMap="ScMap">
+        SELECT
+            a.*, CASE
+        WHEN @fscore = a.scoreTotal THEN
+            @rank
+        WHEN @fscore := a.scoreTotal THEN
+            @rank := @rank + 1
+        END AS rank
+        FROM
+            (
+                SELECT
+                    sc.sid,
+                    SUM(score) AS scoreTotal
+                FROM
+                    sc
+                GROUP BY
+                    sid
+                ORDER BY
+                    scoreTotal DESC
+            ) AS a,
+            (
+                SELECT
+                    @rank := 0,
+                    @fscore := NULL
+            ) AS t;
+    </select>
+
+    <select id="findCidByScore" resultType="Sc">
+        SELECT DISTINCT
+            sc.cid
+        FROM
+            sc,
+            student AS s
+        WHERE
+            sc.sid = s.sid
+        AND score &lt; #{score};
+    </select>
+
+    <select id="findStudentByCidAndScore02" resultType="Student">
+        SELECT
+            sc.sid,
+            sname
+        FROM
+            sc,
+            student AS s
+        WHERE
+            sc.sid = s.sid
+        AND sc.cid = #{cid}
+        AND score >= #{score};
+    </select>
+
+    <select id="findCidAndNum" resultMap="ScMap">
+        SELECT
+            cid,
+            COUNT(sid) AS nums
+        FROM
+            sc
+        GROUP BY
+            cid
+        <if test="num != null">
+            HAVING COUNT(cid) > #{num}
+        </if>
+    </select>
+
+    <select id="findMaxScoreByTname" resultMap="StudentMap">
+        SELECT
+            s.*, MAX(score) maxs
+        FROM
+            student AS s,
+            sc
+        WHERE
+            s.sid = sc.sid
+        AND sc.cid = (
+            SELECT
+                cid
+            FROM
+                teacher t,
+                course c
+            WHERE
+                t.tid = c.tid
+            AND tname = #{name}
+        )
+    </select>
+
+    <select id="findMaxScoreByTname02" resultMap="StudentMap">
+        SELECT
+            *
+        FROM
+            student s,
+            sc
+        WHERE
+            s.sid = sc.sid
+        AND sc.score = (
+            SELECT
+                MAX(score) score
+            FROM
+                student AS s,
+                sc
+            WHERE
+                s.sid = sc.sid
+            AND sc.cid = (
+                SELECT
+                    cid
+                FROM
+                    teacher t,
+                    course c
+                WHERE
+                    t.tid = c.tid
+                AND tname = #{name}
+            )
+        )
+    </select>
+    
+    <select id="findStudentByScoreAndCid" resultType="Sc">
+        SELECT DISTINCT
+            a.*
+        FROM
+            sc AS a
+        INNER JOIN sc AS b
+        WHERE
+            a.score = b.score
+        AND a.cid != b.cid;
+    </select>
+
+    <select id="findScoreOrderByCid05" resultType="Sc">
+        SELECT
+            *
+        FROM
+            sc
+        WHERE
+            (
+                SELECT
+                    COUNT(*)
+                FROM
+                    sc AS a
+                WHERE
+                    sc.cid = a.cid
+                AND sc.score &lt; a.score
+            ) &lt; #{number}
+        ORDER BY
+            cid ASC,
+            sc.score DESC;
+    </select>
+
+    <select id="findStudentByCourseTotal02" resultMap="StudentMap">
+        SELECT
+            sid,
+            COUNT(cid) CourseTotal
+        FROM
+            sc
+        GROUP BY
+            sid
+        HAVING
+            COUNT(cid) >= #{number};
+    </select>
+    
+    <select id="findStudentByCourse" resultType="Student">
+        SELECT
+            s.*
+        FROM
+            sc,
+            student s
+        WHERE
+            sc.sid = s.sid
+        GROUP BY
+            sid
+        HAVING
+            COUNT(cid) = (SELECT COUNT(*) FROM course)
+
+    </select>
+    <select id="findStudentAndSage" resultType="Student">
+        SELECT
+            sname,
+            YEAR (NOW()) - YEAR (sage) sage
+        FROM
+            student
+    </select>
+
+    <select id="findStudentAndSage02" resultType="Student">
+        SELECT
+            sname,
+            CASE
+        WHEN (
+            DATE_FORMAT(NOW(), '%m-%d') - DATE_FORMAT(sage, '%m-%d')
+        ) &lt; 0 THEN
+            YEAR (NOW()) - YEAR (sage) - 1
+        ELSE
+            YEAR (NOW()) - YEAR (sage)
+        END AS sage
+        FROM
+            student;
+    </select>
+
+    <select id="findStudentByBirthday" resultType="Student">
+        SELECT
+            sname
+        FROM
+            student
+        WHERE
+            WEEK (sage) = WEEK (NOW());
+    </select>
+
+    <select id="findStudentByBirthday02" resultType="Student">
+        SELECT
+          sname
+        FROM
+          student
+        WHERE
+            WEEK(sage) = WEEK(NOW()) + 1 ;
+    </select>
+
+    <select id="findStudentByBirthday03" resultType="Student">
+        SELECT
+            sname,
+            sage
+        FROM
+            student
+        WHERE
+            MONTH (sage) = MONTH (NOW());
+    </select>
+
+    <select id="findStudentByBirthday04" resultType="Student">
+        SELECT
+            sname,
+            sage
+        FROM
+            student
+        WHERE
+            MONTH (sage) = MONTH (NOW())+1;
     </select>
 </mapper>
